@@ -121,7 +121,7 @@ class TerminalDrawer extends StatelessWidget {
                       value: 'mínimo',
                       child: Tooltip(
                         message:
-                            'A IA responde de forma básica e rápida.\nUso: Tarefas muito simples e diretas.',
+                            'A IA responde de forma básica e rápida.\nUso: Tarefas simples e diretas.',
                         child: const Text('Mínimo'),
                       ),
                     ),

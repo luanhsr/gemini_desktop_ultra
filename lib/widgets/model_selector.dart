@@ -24,12 +24,12 @@ class ModelSelector extends StatelessWidget {
               style: const TextStyle(color: Color(0xFF8BF18F)),
               items: const [
                 DropdownMenuItem(
-                    value: 'gemini-1.5-pro', child: Text('Gemini 1.5 Pro')),
+                    value: 'gemini-2.5-flash', child: Text('Gemini 2.5 Flash')),
                 DropdownMenuItem(
-                    value: 'gemini-1.5-flash', child: Text('Gemini 1.5 Flash')),
+                    value: 'gemini-2.0-flash', child: Text('Gemini 2.0 Flash')),
                 DropdownMenuItem(
-                    value: 'gemini-2.0-flash-thinking-exp',
-                    child: Text('Gemini 2.0 Thinking')),
+                    value: 'gemini-2.0-flash-lite',
+                    child: Text('Gemini 2.0 Lite')),
               ],
               onChanged: (val) {
                 if (val != null) provider.updateModel(val);

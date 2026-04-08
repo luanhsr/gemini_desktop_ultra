@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/chat_settings.dart';
 import 'providers/chat_provider.dart';
 import 'screens/chat_screen.dart';
 
-void main() {
+Future<void> main() async {
+  // Garante que o Flutter carregue as dependências antes de iniciar o App
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Carrega o arquivo .env (que deve estar no seu gitignore)
+  await dotenv.load(fileName: ".env");
+
   runApp(const GeminiApp());
 }
 
@@ -13,12 +20,14 @@ class GeminiApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settings = ChatSettings(
-      apiKey: 'SUA_CHAVE_API_AQUI', // ← COLOCA AQUI
-      temperature: 0.7,
-      selectedModel: 'gemini-1.5-flash',
-    );
+    // Busca a API KEY do arquivo .env com fallback para string vazia
+    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
 
+// No main.dart, garanta que o ChatSettings seja chamado assim:
+    final settings = ChatSettings(
+      apiKey: apiKey,
+      // Não force modelos diferentes aqui por enquanto, deixe o GeminiService gerenciar
+    );
     return MaterialApp(
       title: 'Gemini Desktop Ultra',
       debugShowCheckedModeBanner: false,

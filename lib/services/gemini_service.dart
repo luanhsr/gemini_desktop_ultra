@@ -2,41 +2,48 @@ import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/chat_settings.dart';
 
 class GeminiService {
-  late GenerativeModel model;
-  late ChatSession chat;
-  final List<Content> history = [];
+  late GenerativeModel _model;
+  late ChatSession _chatSession;
 
   GeminiService(ChatSettings settings) {
-    model = GenerativeModel(
-      model: settings.selectedModel,
-      apiKey: settings.apiKey,
-      generationConfig: GenerationConfig(
-        temperature: settings.temperature,
-        topP: 0.95,
-        topK: 40,
-      ),
-    );
+    // Correção: Agora ouve qual modelo o App passar em vez de fixar em um antigo!
+    _model = GenerativeModel(
+        model: settings.selectedModel,
+        apiKey: settings.apiKey.trim(),
+        // Bônus: Agora ele escuta a barrinha de Temperatura da sua interface!
+        generationConfig: GenerationConfig(
+          temperature: settings.temperature,
+        ));
+
+    _chatSession = _model.startChat();
   }
 
-  Future<String> sendMessage(String message) async {
+  Future<Map<String, dynamic>> sendMessage(String message) async {
     try {
-      history.add(Content.text(message));
-      chat = model.startChat(
-        history:
-            history.sublist(0, history.length > 0 ? history.length - 1 : 0),
-      );
+      if (message.isEmpty) return {'text': 'Mensagem vazia.', 'tokens': 0};
 
-      final response = await chat.sendMessage(Content.text(message));
-      final responseText = response.text ?? 'Sem resposta';
+      final response = await _chatSession.sendMessage(Content.text(message));
 
-      history.add(Content.model([TextPart(responseText)]));
-      return responseText;
+      return {
+        'text': response.text ?? 'Erro: Resposta vazia ou bloqueada.',
+        'tokens': response.usageMetadata?.totalTokenCount ?? 0,
+      };
     } catch (e) {
-      return 'Erro na API: $e';
+      String errorMsg = e.toString();
+      // MANTEMOS seu detector de limite de quota aqui:
+      if (errorMsg.contains('429') ||
+          errorMsg.contains('Quota exceeded') ||
+          errorMsg.contains('limit: 0')) {
+        return {
+          'text': '>>> BLOQUEIO DE COTA (Aguarde 1 min) <<<\nLog: $errorMsg',
+          'tokens': 0
+        };
+      }
+      return {'text': '>>> ERRO NO SERVIÇO <<<\n$errorMsg', 'tokens': 0};
     }
   }
 
   void clearHistory() {
-    history.clear();
+    _chatSession = _model.startChat();
   }
 }

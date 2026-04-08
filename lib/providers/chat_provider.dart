@@ -1,11 +1,13 @@
-import 'dart:async'; // Necessário para o Timer
+import 'dart:async';
+import 'dart:convert'; // Para o JSON
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Persistência
 import '../models/chat_settings.dart';
 import '../services/gemini_service.dart';
 
 class ChatProvider extends ChangeNotifier {
   late GeminiService _geminiService;
-  final List<Map<String, String>> messages = [];
+  List<Map<String, String>> messages = [];
   bool isLoading = false;
   late ChatSettings settings;
 
@@ -24,9 +26,43 @@ class ChatProvider extends ChangeNotifier {
 
   ChatProvider(this.settings) {
     _geminiService = GeminiService(settings);
-    startQuotaTimers(); // Iniciamos o timer assim que o App abre
+    _loadData(); // Carrega os dados salvos
+    startQuotaTimers();
   }
 
+  // --- PERSISTÊNCIA ---
+  Future<void> _saveData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('chat_messages', jsonEncode(messages));
+    await prefs.setInt('total_tokens', totalTokens);
+    await prefs.setInt('current_rpd', currentRPD);
+    await prefs.setString(
+        'last_reset_date', _lastResetDate?.toIso8601String() ?? '');
+    await prefs.setString('selected_model', settings.selectedModel);
+  }
+
+  Future<void> _loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final msgs = prefs.getString('chat_messages');
+
+    settings.selectedModel =
+        prefs.getString('selected_model') ?? 'gemini-2.5-flash';
+    _geminiService = GeminiService(settings); // Inicializa com o modelo salvo
+    if (msgs != null) {
+      final List<dynamic> decoded = jsonDecode(msgs);
+      messages.addAll(decoded.map((e) => Map<String, String>.from(e)).toList());
+    }
+
+    totalTokens = prefs.getInt('total_tokens') ?? 0;
+    currentRPD = prefs.getInt('current_rpd') ?? 1;
+    final dateStr = prefs.getString('last_reset_date');
+    if (dateStr != null && dateStr.isNotEmpty) {
+      _lastResetDate = DateTime.parse(dateStr);
+    }
+    notifyListeners();
+  }
+
+  // --- LOGICA DE ENVIO ---
   Future<void> sendMessage(String text) async {
     if (text.isEmpty || isLoading) return;
 
@@ -43,6 +79,7 @@ class ChatProvider extends ChangeNotifier {
         updateTokenCount(tokens);
         _updateQuotaMetrics(tokens);
       }
+      _saveData(); // Salva após enviar
     } catch (e) {
       messages.add({'role': 'model', 'text': 'Erro: $e'});
     }
@@ -56,9 +93,8 @@ class ChatProvider extends ChangeNotifier {
     _requestTimestamps.add(now);
     _tokenUsageLog.add({'time': now, 'tokens': tokensSent});
 
-    // RPD Logic
     if (_lastResetDate == null || _lastResetDate!.day != now.day) {
-      currentRPD = 2;
+      currentRPD = 1;
       _lastResetDate = now;
     } else {
       currentRPD++;
@@ -69,8 +105,6 @@ class ChatProvider extends ChangeNotifier {
   void startQuotaTimers() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       DateTime now = DateTime.now();
-
-      // Limpa janelas expiradas
       _requestTimestamps.removeWhere((t) => now.difference(t).inSeconds >= 60);
       _tokenUsageLog.removeWhere(
           (t) => now.difference(t['time'] as DateTime).inSeconds >= 60);
@@ -88,31 +122,36 @@ class ChatProvider extends ChangeNotifier {
 
       DateTime endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
       timeUntilRPDReset = endOfDay.difference(now);
-
       notifyListeners();
     });
   }
 
-  void updateTokenCount(int count) => totalTokens += count;
+  void updateTokenCount(int count) {
+    totalTokens += count;
+    _saveData();
+  }
 
   void clearChat() {
     messages.clear();
+    _saveData();
+    _geminiService.clearHistory();
+    notifyListeners();
+  }
+
+  void removeMessage(int index) {
+    messages.removeAt(index);
+    _saveData();
     _geminiService.clearHistory();
     notifyListeners();
   }
 
   @override
   void dispose() {
-    _timer?.cancel(); // Importante: mata o timer ao fechar o provider
+    _timer?.cancel();
     super.dispose();
   }
 
-  void removeMessage(int index) {
-    messages.removeAt(index);
-    _geminiService.clearHistory();
-    notifyListeners();
-  }
-
+  // --- Ajustes ---
   void updateTemperature(double temp) {
     settings.temperature = temp;
     notifyListeners();
@@ -120,7 +159,12 @@ class ChatProvider extends ChangeNotifier {
 
   void updateModel(String model) {
     settings.selectedModel = model;
-    _geminiService = GeminiService(settings);
-    notifyListeners();
+    try {
+      _geminiService = GeminiService(settings); // Aqui ele troca a Engine
+      _saveData(); // Salva a escolha
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Erro ao trocar modelo: $e");
+    }
   }
 }

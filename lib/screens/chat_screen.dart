@@ -32,21 +32,27 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(' Ulan I.A - TERMINAL ULTRA'),
+        // Adicionamos este leading para ser o hambúrguer
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu), // O ícone hambúrguer
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
         actions: [
           IconButton(
             icon: Icon(_showStats ? Icons.analytics : Icons.analytics_outlined),
-            tooltip: 'Monitor de Quota',
             onPressed: () => setState(() => _showStats = !_showStats),
           ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            tooltip: 'Limpar Chat',
             onPressed: () =>
                 Provider.of<ChatProvider>(context, listen: false).clearChat(),
           ),
         ],
       ),
-      endDrawer: const TerminalDrawer(),
+      drawer:
+          const TerminalDrawer(), // Mudamos para 'drawer' em vez de 'endDrawer'
       body: Consumer<ChatProvider>(
         builder: (context, provider, _) {
           WidgetsBinding.instance
@@ -67,9 +73,11 @@ class _ChatScreenState extends State<ChatScreen> {
                           rpm: provider.currentRPM,
                           tpm: provider.currentTPM,
                           rpd: provider.currentRPD,
-                          totalTokens: provider.totalTokens, // Novo parâmetro
-                          timeRPM: provider.timeUntilRPMReset, // Novo parâmetro
-                          timeRPD: provider.timeUntilRPDReset, // Novo parâmetro
+                          totalTokens: provider.totalTokens,
+                          timeRPM: provider.timeUntilRPMReset,
+                          timeRPD: provider.timeUntilRPDReset,
+                          currentModel: provider
+                              .settings.selectedModel, // Adicione esta linha!
                         ),
                       ),
                     Align(

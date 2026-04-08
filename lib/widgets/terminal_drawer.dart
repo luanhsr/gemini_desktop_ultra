@@ -37,13 +37,24 @@ class TerminalDrawer extends StatelessWidget {
                     value: provider.settings.selectedModel,
                     isExpanded: true,
                     style: const TextStyle(color: Color(0xFF8BF18F)),
+                    // LISTA UNIFICADA E SEM DUPLICATAS:
                     items: const [
                       DropdownMenuItem(
                           value: 'gemini-3.1-flash-lite-preview',
-                          child: Text('Gemini 3.1 Flash Lite (500 RPD)')),
+                          child: Text('Gemini 3.1 Flash Lite')),
                       DropdownMenuItem(
                           value: 'gemini-2.5-flash',
-                          child: Text('Gemini 2.5 Flash (20 RPD)')),
+                          child: Text('Gemini 2.5 Flash')),
+                      DropdownMenuItem(
+                          value: 'gemma-3-1b-it', child: Text('Gemma 3 - 1B')),
+                      DropdownMenuItem(
+                          value: 'gemma-3-4b-it', child: Text('Gemma 3 - 4B')),
+                      DropdownMenuItem(
+                          value: 'gemma-3-12b-it',
+                          child: Text('Gemma 3 - 12B')),
+                      DropdownMenuItem(
+                          value: 'gemma-3-27b-it',
+                          child: Text('Gemma 3 - 27B')),
                     ],
                     onChanged: (val) {
                       if (val != null) provider.updateModel(val);

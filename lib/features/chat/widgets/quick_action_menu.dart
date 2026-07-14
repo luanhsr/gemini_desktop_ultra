@@ -1,7 +1,81 @@
+/// # QuickActionMenu
+///
+/// Widget responsável pela exibição do menu de ações rápidas
+/// disponível na interface do chat.
+///
+/// Este componente fornece atalhos para recursos que podem ser
+/// utilizados durante uma conversa, evitando que o usuário precise
+/// executar fluxos mais longos para acessar funcionalidades comuns.
+///
+/// ## Responsabilidades
+///
+/// - Exibir o menu de ações rápidas.
+/// - Controlar animações de abertura e fechamento.
+/// - Encaminhar ações selecionadas para o componente pai.
+/// - Fornecer feedback visual durante a exibição.
+/// - Disponibilizar atalhos para recursos multimídia.
+///
+/// ## Dependências
+///
+/// - AnimationController
+/// - SingleTickerProviderStateMixin
+/// - SizeTransition
+/// - AnimatedBuilder
+///
+/// ## Fluxo
+///
+/// ```text
+/// Usuário
+///     ↓
+/// Abre menu
+///     ↓
+/// visible = true
+///     ↓
+/// AnimationController
+///     ↓
+/// Menu expandido
+///     ↓
+/// Seleciona ação
+///     ↓
+/// onAction()
+/// ```
+///
+/// ## Ações Disponíveis
+///
+/// | Ação | Finalidade |
+/// |--------|--------|
+/// | drive | Integração com arquivos do Google Drive. |
+/// | upload | Envio de arquivos locais. |
+/// | audio | Gravação ou envio de áudio. |
+/// | camera | Captura de imagem pela câmera. |
+/// | youtube | Utilização de vídeos do YouTube. |
+/// | media | Seleção de mídia genérica. |
+///
+/// ## Sistema de Animação
+///
+/// O menu utiliza duas animações independentes:
+///
+/// - Expansão vertical através de [SizeTransition].
+/// - Efeito visual "glitch" através de deslocamentos animados.
+///
+/// ## Observações
+///
+/// - O componente não executa as ações diretamente.
+/// - Toda ação é encaminhada através de `onAction`.
+/// - O estado de visibilidade é controlado externamente.
+/// - O widget mantém apenas o estado necessário para animações.
+///
+/// ## Código-fonte
+///
+/// <https://github.com/luanhsr/gemini_desktop_ultra/blob/main/lib/widgets/quick_action_menu.dart>
+
 import 'package:flutter/material.dart';
 
 class QuickActionMenu extends StatefulWidget {
+  /// Define se o menu deve estar visível.
   final bool visible;
+
+  /// Callback executado quando uma ação é selecionada.
   final ValueChanged<String> onAction;
 
   const QuickActionMenu({
@@ -16,8 +90,14 @@ class QuickActionMenu extends StatefulWidget {
 
 class _QuickActionMenuState extends State<QuickActionMenu>
     with SingleTickerProviderStateMixin {
+  /// Controlador principal das animações do menu.
   late final AnimationController _controller;
+
+  /// Controla a expansão e recolhimento do menu.
   late final Animation<double> _expandAnimation;
+
+  /// Responsável pelo efeito visual de deslocamento ("glitch")
+  /// exibido durante a abertura do menu.
   late final Animation<Offset> _glitchOffset;
 
   @override

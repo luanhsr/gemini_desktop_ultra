@@ -3,8 +3,78 @@ import 'dart:convert'; // Para o JSON
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart'; // Persistência
 import '../models/chat_settings.dart';
-import '../services/gemini_service.dart';
+import '../../../services/google/gemini_service.dart';
 
+/// # ChatProvider
+///
+/// Principal controlador de estado da aplicação.
+///
+/// Este provider atua como ponto central de comunicação entre
+/// a interface e os serviços responsáveis pelas interações com a IA.
+///
+/// Além do gerenciamento das mensagens, ele também é responsável
+/// por controlar configurações da sessão, persistência local
+/// e monitoramento estimado de consumo.
+///
+/// ## Responsabilidades
+///
+/// - Armazenar o histórico de mensagens.
+/// - Enviar mensagens para o GeminiService.
+/// - Receber respostas do modelo.
+/// - Persistir dados localmente.
+/// - Gerenciar configurações ativas.
+/// - Monitorar métricas de uso.
+/// - Notificar a interface quando houver alterações.
+///
+/// ## Componentes Relacionados
+///
+/// ```text
+/// Widgets
+///     ↓
+/// ChatProvider
+///     ↓
+/// GeminiService
+///     ↓
+/// API Gemini
+/// ```
+///
+/// ## Estados Gerenciados
+///
+/// | Estado | Finalidade |
+/// |----------|----------|
+/// | `messages` | Histórico da conversa atual. |
+/// | `isLoading` | Indica que uma requisição está em andamento. |
+/// | `settings` | Configurações ativas do chat. |
+/// | `totalTokens` | Total estimado de tokens utilizados. |
+/// | `currentRPM` | Requisições realizadas no último minuto. |
+/// | `currentTPM` | Tokens utilizados no último minuto. |
+/// | `currentRPD` | Requisições realizadas no dia atual. |
+///
+/// ## Persistência
+///
+/// O provider salva automaticamente informações importantes
+/// utilizando SharedPreferences.
+///
+/// Atualmente são persistidos:
+///
+/// - Histórico de mensagens.
+/// - Modelo selecionado.
+/// - Total de tokens.
+/// - Estatísticas diárias.
+///
+/// Isso permite que parte do estado seja restaurada
+/// quando a aplicação for iniciada novamente.
+///
+/// ## Observações
+///
+/// - Este é o principal ponto de atualização da interface.
+/// - Toda alteração relevante executa `notifyListeners()`.
+/// - O provider não se comunica diretamente com a API.
+/// - Toda comunicação externa ocorre através do [GeminiService].
+///
+/// ## Código-fonte
+///
+/// <https://github.com/luanhsr/gemini_desktop_ultra/blob/main/lib/providers/chat_provider.dart>
 class ChatProvider extends ChangeNotifier {
   late GeminiService _geminiService;
   List<Map<String, String>> messages = [];
@@ -24,6 +94,25 @@ class ChatProvider extends ChangeNotifier {
   Duration timeUntilRPMReset = Duration.zero;
   Duration timeUntilRPDReset = const Duration(hours: 24);
 
+  /// Cria uma nova instância do ChatProvider.
+  ///
+  /// Durante a inicialização:
+  ///
+  /// 1. Cria o GeminiService.
+  /// 2. Carrega dados persistidos.
+  /// 3. Inicia os temporizadores de monitoramento.
+  ///
+  /// Fluxo:
+  ///
+  /// ```text
+  /// ChatProvider
+  ///     ↓
+  /// GeminiService
+  ///     ↓
+  /// _loadData()
+  ///     ↓
+  /// startQuotaTimers()
+  /// ```
   ChatProvider(this.settings) {
     _geminiService = GeminiService(settings);
     _loadData(); // Carrega os dados salvos
@@ -62,7 +151,43 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // --- LOGICA DE ENVIO ---
+  /// Envia uma mensagem para o modelo atualmente selecionado.
+  ///
+  /// Este método representa o fluxo principal da aplicação.
+  ///
+  /// ## Fluxo
+  ///
+  /// ```text
+  /// Usuário
+  ///     ↓
+  /// sendMessage()
+  ///     ↓
+  /// Adiciona mensagem localmente
+  ///     ↓
+  /// Ativa isLoading
+  ///     ↓
+  /// GeminiService.sendMessage()
+  ///     ↓
+  /// Recebe resposta
+  ///     ↓
+  /// Atualiza métricas
+  ///     ↓
+  /// Salva dados
+  ///     ↓
+  /// Atualiza interface
+  /// ```
+  ///
+  /// ## Comportamentos
+  ///
+  /// - Ignora mensagens vazias.
+  /// - Impede múltiplos envios simultâneos.
+  /// - Registra mensagens do usuário.
+  /// - Registra respostas do modelo.
+  /// - Atualiza estatísticas de consumo.
+  /// - Persiste os dados localmente.
+  ///
+  /// Em caso de erro, a falha é adicionada ao histórico
+  /// como uma mensagem do modelo.
   Future<void> sendMessage(String text) async {
     if (text.isEmpty || isLoading) return;
 
@@ -88,6 +213,19 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// ## Atualiza métricas locais de utilização.
+  ///
+  /// Os valores calculados aqui são apenas estimativas
+  /// utilizadas para monitoramento visual.
+  ///
+  /// **Métricas atualizadas:**
+  ///
+  /// - RPM
+  /// - TPM
+  /// - RPD
+  ///
+  /// Também registra o horário da requisição
+  /// para permitir cálculos temporais posteriores.
   void _updateQuotaMetrics(int tokensSent) {
     DateTime now = DateTime.now();
     _requestTimestamps.add(now);
@@ -102,6 +240,23 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// ## Inicia os temporizadores responsáveis pelo cálculo
+  /// contínuo das métricas de uso.
+  ///
+  /// Um timer é executado a cada segundo para:
+  ///
+  /// - Remover registros expirados.
+  /// - Recalcular RPM.
+  /// - Recalcular TPM.
+  /// - Atualizar contadores regressivos.
+  /// - Notificar a interface.
+  ///
+  /// ## Janela de cálculo
+  ///
+  /// RPM e TPM utilizam uma janela móvel de 60 segundos.
+  ///
+  /// Isso significa que valores antigos são removidos
+  /// automaticamente conforme envelhecem.
   void startQuotaTimers() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       DateTime now = DateTime.now();
@@ -157,6 +312,18 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Altera o modelo atualmente utilizado.
+  ///
+  /// Sempre que um novo modelo é selecionado:
+  ///
+  /// 1. O valor é salvo em `settings`.
+  /// 2. Um novo GeminiService é criado.
+  /// 3. A configuração é persistida.
+  /// 4. A interface é atualizada.
+  ///
+  /// A recriação do serviço garante que futuras requisições
+  /// utilizem imediatamente o novo modelo selecionado.
+  ///
   void updateModel(String model) {
     settings.selectedModel = model;
     try {

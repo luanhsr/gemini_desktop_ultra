@@ -1,8 +1,90 @@
+/// # SystemInstructionPanel
+///
+/// Painel responsável pela criação, edição, seleção e ativação
+/// de instruções de sistema utilizadas pela IA.
+///
+/// Este componente permite definir comportamentos personalizados
+/// que influenciam a forma como a IA responde durante uma conversa.
+///
+/// ## Responsabilidades
+///
+/// - Exibir instruções disponíveis.
+/// - Permitir criação de novas instruções.
+/// - Permitir edição de instruções existentes.
+/// - Controlar qual instrução está ativa.
+/// - Fornecer interface para gerenciamento de System Prompts.
+/// - Exibir o painel como um diálogo lateral.
+///
+/// ## Funcionalidades
+///
+/// | Recurso | Finalidade |
+/// |----------|----------|
+/// | Seleção | Escolher uma instrução existente. |
+/// | Criação | Criar uma nova instrução personalizada. |
+/// | Edição | Alterar título e conteúdo da instrução. |
+/// | Ativação | Definir se a instrução será utilizada. |
+/// | Persistência | Preparar dados para salvamento futuro. |
+///
+/// ## Fluxo
+///
+/// ```text
+/// Usuário
+///     ↓
+/// Abre painel
+///     ↓
+/// Seleciona ou cria instrução
+///     ↓
+/// Edita conteúdo
+///     ↓
+/// Marca "Utilizar instrução"
+///     ↓
+/// Salva configuração
+/// ```
+///
+/// ## Estrutura do Painel
+///
+/// ```text
+/// Cabeçalho
+///     ↓
+/// Seleção / Criação
+///     ↓
+/// Título
+///     ↓
+/// Conteúdo da Instrução
+///     ↓
+/// Ativação
+///     ↓
+/// Salvamento
+/// ```
+///
+/// ## Sistema de Exibição
+///
+/// O painel é apresentado utilizando `showGeneralDialog`,
+/// sendo exibido lateralmente através de uma animação
+/// de entrada baseada em `SlideTransition`.
+///
+/// ## Observações
+///
+/// - O painel mantém estado próprio.
+/// - As instruções exibidas atualmente são locais ao widget.
+/// - O componente ainda não realiza persistência definitiva.
+/// - O conteúdo das instruções é armazenado temporariamente
+///   pelos controladores de texto.
+/// - O estado de ativação é controlado por `_useInstruction`.
+///
+/// ## Código-fonte
+///
+/// <https://github.com/luanhsr/gemini_desktop_ultra/blob/main/lib/widgets/system_instruction_panel.dart>
+
 import 'package:flutter/material.dart';
 
 class SystemInstructionPanel extends StatefulWidget {
   const SystemInstructionPanel({Key? key}) : super(key: key);
 
+  /// Exibe o painel como um diálogo lateral.
+  ///
+  /// Utiliza uma animação de deslizamento horizontal
+  /// para apresentar o componente na interface.
   static Future<void> open(BuildContext context) {
     return showGeneralDialog(
       context: context,
@@ -36,8 +118,18 @@ class SystemInstructionPanel extends StatefulWidget {
 }
 
 class _SystemInstructionPanelState extends State<SystemInstructionPanel> {
+  /// Controla o campo de título da instrução.
   final TextEditingController _titleController = TextEditingController();
+
+  /// Controla o conteúdo textual da instrução.
   final TextEditingController _contentController = TextEditingController();
+
+  /// Lista local de instruções disponíveis.
+  ///
+  /// Cada item contém:
+  ///
+  /// - label: nome da instrução.
+  /// - enabled: indica disponibilidade.
   final List<Map<String, dynamic>> _instructions = [
     {'label': 'Responda de forma amigável e concisa.', 'enabled': true},
     {'label': 'Use linguagem técnica e objetiva.', 'enabled': true},

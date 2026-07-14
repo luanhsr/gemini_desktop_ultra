@@ -1,10 +1,83 @@
+/// # MessageBubble
+///
+/// Componente responsável pela renderização individual de mensagens
+/// exibidas no histórico do chat.
+///
+/// Este widget é utilizado tanto para mensagens enviadas pelo usuário
+/// quanto para respostas geradas pela IA.
+///
+/// ## Responsabilidades
+///
+/// - Exibir mensagens do histórico.
+/// - Interpretar conteúdo Markdown.
+/// - Diferenciar visualmente usuário e IA.
+/// - Permitir seleção de texto.
+/// - Permitir cópia para área de transferência.
+/// - Permitir exclusão através de long press.
+///
+/// ## Parâmetros
+///
+/// | Campo | Finalidade |
+/// |---------|---------|
+/// | `text` | Conteúdo da mensagem. |
+/// | `isUser` | Define se a mensagem pertence ao usuário ou à IA. |
+/// | `onDelete` | Callback executado durante a exclusão da mensagem. |
+///
+/// ## Fluxo de Renderização
+///
+/// ```text
+/// Mensagem
+///     ↓
+/// MarkdownBody
+///     ↓
+/// Interface
+/// ```
+///
+/// ## Fluxo de Exclusão
+///
+/// ```text
+/// Usuário
+///     ↓
+/// Long Press
+///     ↓
+/// Feedback visual
+///     ↓
+/// onDelete()
+/// ```
+///
+/// ## Recursos Suportados
+///
+/// - Texto simples.
+/// - Markdown.
+/// - Blocos de código.
+/// - Listas.
+/// - Negrito.
+/// - Seleção de texto.
+///
+/// ## Observações
+///
+/// - O widget não armazena mensagens.
+/// - O histórico é gerenciado externamente.
+/// - A exclusão é delegada através do callback `onDelete`.
+/// - O conteúdo é renderizado utilizando `flutter_markdown`.
+///
+/// ## Código-fonte
+///
+/// <https://github.com/luanhsr/gemini_desktop_ultra/blob/main/lib/widgets/message_bubble.dart>
+///
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart'; // Import necessário
 
 class MessageBubble extends StatefulWidget {
+  /// Conteúdo textual da mensagem.
   final String text;
+
+  /// Define se a mensagem pertence ao usuário.
   final bool isUser;
+
+  /// Callback executado quando a mensagem deve ser removida.
   final VoidCallback? onDelete;
 
   const MessageBubble({
@@ -19,8 +92,11 @@ class MessageBubble extends StatefulWidget {
 }
 
 class _MessageBubbleState extends State<MessageBubble> {
+  /// Controla o estado visual de exclusão.
   bool _isDeleting = false;
 
+  /// Copia o conteúdo da mensagem para a área de transferência
+  /// e exibe uma confirmação visual ao usuário.
   void _copyToClipboard(BuildContext context) {
     Clipboard.setData(ClipboardData(text: widget.text));
     ScaffoldMessenger.of(context).showSnackBar(

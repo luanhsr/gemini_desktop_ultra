@@ -1,11 +1,59 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/chat_provider.dart';
-import '../widgets/message_bubble.dart';
-import '../widgets/chat_input.dart';
-import '../widgets/terminal_drawer.dart';
-import '../widgets/quota_monitor.dart';
+import 'provider/chat_provider.dart';
+import 'widgets/message_bubble.dart';
+import 'widgets/chat_input.dart';
+import '../../widgets/terminal_drawer.dart';
+import '../../widgets/quota_monitor.dart';
 
+/// # ChatScreen
+///
+/// Tela principal da aplicação.
+///
+/// Responsável por reunir os componentes visuais do chat,
+/// conectar a interface ao [ChatProvider] e exibir o estado
+/// atual da conversa.
+///
+/// ## Componentes Principais
+///
+/// - [MessageBubble] → Exibição das mensagens.
+/// - [ChatInput] → Entrada de comandos.
+/// - [QuotaMonitor] → Estatísticas de uso.
+/// - [TerminalDrawer] → Configurações da aplicação.
+///
+/// ## Funcionalidades
+///
+/// - Exibe o histórico da conversa.
+/// - Atualiza automaticamente quando o Provider notifica mudanças.
+/// - Permite limpar o histórico.
+/// - Exibe estatísticas de utilização.
+/// - Realiza scroll automático para novas mensagens.
+///
+/// ## Fluxo Geral
+///
+/// ```text
+/// Usuário
+///     ↓
+/// ChatInput
+///     ↓
+/// ChatProvider
+///     ↓
+/// GeminiService
+///     ↓
+/// Resposta
+///     ↓
+/// ChatScreen atualiza interface
+/// ```
+///
+/// ## Observações
+///
+/// - Atua principalmente como camada visual.
+/// - Grande parte da lógica de negócio está concentrada em [ChatProvider].
+/// - Mantém apenas estados locais relacionados à interface.
+///
+/// ## Código-fonte
+///
+/// <https://github.com/luanhsr/gemini_desktop_ultra/blob/main/lib/screens/chat_screen.dart>
 class ChatScreen extends StatefulWidget {
   const ChatScreen({Key? key}) : super(key: key);
 
@@ -17,11 +65,15 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _showStats = false; // Controle de visibilidade do monitor
 
+  /// Realiza o scroll automático para a última mensagem.
+  ///
+  /// Utilizado para manter a conversa posicionada
+  /// no conteúdo mais recente.
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 5000),
         curve: Curves.easeOut,
       );
     }

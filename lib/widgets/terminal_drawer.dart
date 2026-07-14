@@ -1,6 +1,41 @@
+/// # TerminalDrawer
+///
+/// Painel lateral de configurações da aplicação.
+///
+/// Permite alterar parâmetros globais utilizados
+/// durante a conversa com a IA.
+///
+/// ## Configurações Disponíveis
+///
+/// - Modelo de IA.
+/// - Temperatura.
+/// - Status da aplicação.
+///
+/// ## Fluxo
+///
+/// ```text
+/// Usuário
+///     ↓
+/// TerminalDrawer
+///     ↓
+/// ChatProvider
+///     ↓
+/// Atualização das configurações
+/// ```
+///
+/// ## Observações
+///
+/// - Utiliza [ChatProvider] como fonte de dados.
+/// - Não possui estado próprio.
+/// - Atua apenas como interface para configuração.
+///
+/// ## Código-fonte
+///
+/// <https://github.com/luanhsr/gemini_desktop_ultra/blob/main/lib/widgets/terminal_drawer.dart>
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/chat_provider.dart';
+import '../features/chat/provider/chat_provider.dart';
 import 'system_instruction_panel.dart';
 
 class TerminalDrawer extends StatelessWidget {

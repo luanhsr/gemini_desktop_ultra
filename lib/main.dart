@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'models/chat_settings.dart';
-import 'providers/chat_provider.dart';
-import 'screens/chat_screen.dart';
+import 'features/chat/models/chat_settings.dart';
+import 'features/chat/provider/chat_provider.dart';
+import 'features/chat/chat_screen.dart';
 
+/// Inicializa dependências e inicia a aplicação.
 Future<void> main() async {
   // Garante que o Flutter carregue as dependências antes de iniciar o App
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,9 +16,63 @@ Future<void> main() async {
   runApp(const GeminiApp());
 }
 
+/// # GeminiApp
+///
+/// Ponto de entrada da aplicação.
+///
+/// Este arquivo é responsável por inicializar o ambiente,
+/// carregar configurações essenciais e montar a estrutura
+/// principal utilizada pelo aplicativo.
+///
+/// ## Inicialização
+///
+/// Durante a execução do `main()`:
+///
+/// 1. O Flutter inicializa os bindings necessários.
+/// 2. O arquivo `.env` é carregado.
+/// 3. A aplicação é iniciada através de [GeminiApp].
+///
+/// ## Responsabilidades
+///
+/// - Carregar a chave da API.
+/// - Criar a instância inicial de [ChatSettings].
+/// - Registrar o [ChatProvider].
+/// - Configurar tema e aparência global.
+/// - Definir a tela inicial da aplicação.
+///
+/// ## Fluxo
+///
+/// ```text
+/// main()
+///     ↓
+/// .env
+///     ↓
+/// ChatSettings
+///     ↓
+/// ChatProvider
+///     ↓
+/// ChatScreen
+/// ```
+///
+/// ## Observações
+///
+/// - A chave da API é carregada do arquivo `.env`.
+/// - O Provider é disponibilizado para toda a árvore de widgets.
+/// - O tema visual da aplicação é configurado neste arquivo.
+///
+/// ## Código-fonte
+///
+/// <https://github.com/luanhsr/gemini_desktop_ultra/blob/main/lib/main.dart>
+///
 class GeminiApp extends StatelessWidget {
   const GeminiApp({super.key});
 
+  /// Monta a estrutura principal da aplicação.
+  ///
+  /// Aqui são configurados:
+  /// - Tema global.
+  /// - Provider principal.
+  /// - Tela inicial.
   @override
   Widget build(BuildContext context) {
     // Busca a API KEY do arquivo .env com fallback para string vazia
